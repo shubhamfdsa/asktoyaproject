@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toya Education System</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Our Kids Learn
+Ask Toya
+Educational assistant</h1>
+
+        <div class="main-content">
+            <!-- Updated container to show the GIF instead of a video -->
+            <div class="video-container">
+                <img src="/static/com--unscreen.gif" alt="Avatar GIF" class="gif-image" id="gifImage" style="display: none; width: 450px; height: auto; float: left; margin-right: 20px;">
+                <img src="/static/toya_2024-0000-removebg-preview.png" alt="Avatar Image" class="avatar-image" id="avatarImage" style="display: ; width: 450px; height: auto; float: left; margin-right: 20px;">
+
+
+            </div>
+
+            <!-- Chatbox for displaying messages -->
+            <div class="chatbox" id="chatbox"></div>
+        </div>
+
+        <!-- Input container for user name -->
+        <div class="input-container">
+            <input type="text" id="userInput" class="user-input" placeholder="Enter your name here..." />
+            <button class="ask-button" id="askNameButton">Submit Name</button>
+        </div>
+
+        <!-- Input container for user question -->
+        <div class="input-container" id="questionInputContainer" style="display: none;">
+            <input type="text" id="questionInput" class="user-input" placeholder="Type your question here..." />
+            <button class="ask-button" onclick="askQuestion()">Ask</button>
+            <button class="ask-button" id="startSpeechButton">Start Speaking</button> <!-- New speech-to-text button -->
+        </div>
+
+        <!-- Download button to download chat content -->
+        <div class="input-container" id="downloadButtonContainer" style="display: none;">
+            <button class="ask-button" id="downloadButton">Download Chat</button>
+        </div>
+    </div>
+
+    <!-- Subscription Popup -->
+<div class="popup-overlay" id="popupOverlay">
+    <div class="popup-container">
+        <h2>Get Your Free 1 Week Trial!</h2>
+        <p>Choose your subscription plan</p>
+
+        <!-- Subscription Cards -->
+        <div class="subscription-cards">
+            <div class="card">
+                <h3>1 Week</h3>
+                <p class="price">$10 USD</p>
+                <p>1 Week Free Trial</p>
+                <button class="subscribe-button">Subscribe</button>
+            </div>
+            <div class="card">
+                <h3>1 Month</h3>
+                <p class="price">$50 USD</p>
+                <p>Unlimited Access</p>
+                <button class="subscribe-button">Subscribe</button>
+            </div>
+            <div class="card">
+                <h3>1 Year</h3>
+                <p class="price">$500 USD</p>
+                <p>Best Deal</p>
+                <button class="subscribe-button">Subscribe</button>
+            </div>
+        </div>
+
+        <!-- Close Button -->
+        <button class="close-popup" id="closePopup">Close</button>
+    </div>
+</div>
+
+
+    <button class="take-subscription-btn" id="takeSubscriptionBtn">Take Subscription</button>
+
+
+    <!-- Footer for Copyright -->
+    <footer style="text-align: center; padding: 20px; font-size: 20px; color: #000000;">
+        Copyright 2024 Asktoya.com
+    </footer>
+
+    <script>
+        // Function to handle user name submission
+        document.getElementById('askNameButton').addEventListener('click', handleUserName);
+
+        async function handleUserName() {
+            const userInput = document.getElementById('userInput');
+            const chatbox = document.getElementById('chatbox');
+            const userName = userInput.value;
+
+            if (userName.trim() === "") return;
+
+            // Display user name in the chatbox
+            chatbox.innerHTML += `<div class="user-message">You: ${userName}</div>`;
+
+            // Respond with a welcome message including the user's name
+            playVoice(`Welcome ${userName},  i m toya here to help you learn play and explore new things every day If you have questions need help with your projects. homework or want to create something amazing just Asktoya.com
+ `);
+            chatbox.innerHTML += `<div class="bot-message">Toya: Welcome ${userName}, i m toya here to help you learn play and explore new things every day If you have questions need help with your projects. homework or want to create something amazing just Asktoya.com</div>`;
+
+            // Scroll chatbox to the bottom
+            chatbox.scrollTop = chatbox.scrollHeight;
+
+            // Show the question input and hide the name input
+            document.querySelector('.input-container').style.display = 'none';
+            document.getElementById('questionInputContainer').style.display = 'block';
+
+            // Clear user input
+            userInput.value = "";
+        }
+
+        async function askQuestion() {
+            const userInput = document.getElementById('questionInput');
+            const chatbox = document.getElementById('chatbox');
+            const prompt = userInput.value;
+
+            if (prompt.trim() === "") return;
+
+            // Display user input in the chatbox
+            chatbox.innerHTML += `<div class="user-message">You: ${prompt}</div>`;
+
+            try {
+                // Send request to the server for response text
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt })
+                });
+
+                const data = await response.json();
+                const answer = data.answer;
+
+                // Fetch and play the voice before displaying the text response
+                playVoice(answer);
+
+                // Display response in the chatbox after voice starts
+                chatbox.innerHTML += `<div class="bot-message">Toya: ${answer}</div>`;
+
+                // Scroll chatbox to the bottom
+                chatbox.scrollTop = chatbox.scrollHeight;
+
+            } catch (error) {
+                chatbox.innerHTML += `<div class="bot-message">Error: ${error}</div>`;
+            }
+
+            // Clear question input
+            userInput.value = "";
+
+            // Show download button after the first interaction
+            document.getElementById('downloadButtonContainer').style.display = 'block';
+        }
+
+        // Function to use Web Speech API with a female voice (if available)
+        function playVoice(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.pitch = 1;
+            utterance.rate = 1;
+
+            // Get available voices
+            const voices = window.speechSynthesis.getVoices();
+
+            // Debugging output to see available voices
+            console.log("Available voices:", voices);
+
+            // Try to find "Microsoft Zira" first, as it is a female voice
+            let femaleVoice = voices.find(voice => voice.name === "Microsoft Zira - English (United States)");
+
+            // If "Microsoft Zira" is not found, try to find a general female voice
+            if (!femaleVoice) {
+                femaleVoice = voices.find(voice => {
+                    return voice.name.toLowerCase().includes('female') ||
+                           voice.name.toLowerCase().includes('woman') ||
+                           voice.lang.includes('en');
+                });
+            }
+
+            // If no female voice is found, fallback to the first available voice
+            if (!femaleVoice) {
+                femaleVoice = voices[0]; // Use the first available voice
+            }
+
+            // Set the selected voice
+            utterance.voice = femaleVoice;
+
+            // Show the image when voice stops
+            utterance.onend = function() {
+                document.getElementById('gifImage').style.display = 'none'; // Hide GIF
+                document.getElementById('avatarImage').style.display = 'block'; // Show image
+            };
+
+            // Show the GIF when voice starts
+            utterance.onstart = function() {
+                document.getElementById('avatarImage').style.display = 'none'; // Hide image
+                document.getElementById('gifImage').style.display = 'block'; // Show GIF
+            };
+
+            // Speak the text
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Function to download the chat content as a text file
+        document.getElementById('downloadButton').addEventListener('click', function() {
+            const chatbox = document.getElementById('chatbox');
+            const chatText = chatbox.innerText; // Extract chat text from the chatbox
+
+            // Create a Blob from the chat content
+            const blob = new Blob([chatText], { type: 'text/plain' });
+
+            // Create an anchor element to simulate a download link
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'chat_history.txt'; // Name of the downloaded file
+
+            // Trigger the download by clicking the link
+            link.click();
+        });
+
+        // Speech-to-Text functionality
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'en-US'; // Set language to English
+
+        document.getElementById('startSpeechButton').addEventListener('click', function() {
+            recognition.start(); // Start listening for speech
+        });
+
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript; // Get the speech as text
+            document.getElementById('questionInput').value = transcript; // Set the text input value to the speech result
+        };
+
+        recognition.onerror = function(event) {
+            console.error('Speech recognition error', event);
+        };
+
+        // Refresh the voice list (some browsers require this to load voices)
+        window.speechSynthesis.onvoiceschanged = () => {
+            const voices = window.speechSynthesis.getVoices();
+            console.log("Updated voices:", voices);
+        };
+
+        // Show the subscription popup
+function showSubscriptionPopup() {
+    document.getElementById('popupOverlay').style.display = 'flex';
+}
+
+// Close the subscription popup
+document.getElementById('closePopup').addEventListener('click', function() {
+    document.getElementById('popupOverlay').style.display = 'none';
+});
+
+// Trigger the popup after the user enters their name
+document.getElementById('askNameButton').addEventListener('click', function() {
+    handleUserName();
+    showSubscriptionPopup(); // Show the popup after name is entered
+});
+// Show the subscription popup when "Take Subscription" button is clicked
+        document.getElementById('takeSubscriptionBtn').addEventListener('click', showSubscriptionPopup);
+
+    </script>
+</body>
+</html>
+
+
+
+
+
+/* General body styling with background image */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-image: url('/static/background_cleanup.jpg');
+    background-size: cover;
+    background-position: center;
+    height: 100%;
+}
+
+/* Center the main container */
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+}
+
+/* Title styling */
+h1 {
+    font-size: 2.5em;
+    color: #333333;
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.8);
+}
+
+/* Main content layout */
+.main-content {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 30px;
+    width: 100%;
+    max-width: 1200px;
+    justify-content: center;
+    flex-wrap: wrap; /* Make the layout responsive */
+}
+
+.video-container {
+    width: 350px;  /* Adjust width for larger screens */
+    height: 450px; /* Adjust height */
+    overflow: hidden;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.gif-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block; /* Ensures the element is treated as a block-level element */
+    margin-left: auto; /* Centers horizontally */
+    margin-right: auto; /* Centers horizontally */
+}
+
+.chatbox {
+    width: 100%;
+    max-width: 600px;
+    height: 400px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow-y: auto;
+    padding: 20px;
+    color: #333;
+    background: rgba(255 255 255 / 85%);
+    backdrop-filter: blur(5px);
+}
+
+/* User input and ask button styling */
+.input-container {
+    display: flex;
+    flex-wrap: wrap;  /* Ensure it adapts to smaller screens */
+    justify-content: space-between;
+    width: 100%;
+    max-width: 600px;
+    margin-top: 20px;
+}
+
+.user-input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+.ask-button {
+    padding: 10px 20px;
+    background-color: #5DADE2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.ask-button:hover {
+    background-color: #3498db;
+}
+
+/* Chat text styling */
+.chat-message {
+    padding: 10px;
+    margin: 5px 0;
+}
+
+.user-message {
+    color: #0066cc;
+    font-weight: bold;
+}
+
+.bot-message {
+    color: #009933;
+}
+
+/* Popup Overlay */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: none; /* Hidden by default */
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Ensure it's above other content */
+}
+
+/* Popup container */
+.popup-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 600px;
+    text-align: center;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden; /* Prevents overflow if the content is too large */
+}
+
+/* Close Button */
+.close-popup {
+    position: absolute;
+    top: 10px;  /* Adjust top position */
+    right: 10px; /* Adjust right position */
+    padding: 10px 20px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    z-index: 1100; /* Ensure it's on top of the popup */
+}
+
+.close-popup:hover {
+    background-color: #c0392b;
+}
+
+/* Subscription Cards */
+.subscription-cards {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+    flex-wrap: wrap;  /* Allow wrapping of cards on small screens */
+}
+
+.card {
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 10px;
+    width: 30%;
+    text-align: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.card h3 {
+    margin-bottom: 10px;
+    font-size: 1.5em;
+}
+
+.card .price {
+    font-size: 1.2em;
+    color: #3498db;
+    margin-bottom: 10px;
+}
+
+.card .subscribe-button {
+    padding: 10px 20px;
+    background-color: #5DADE2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.card .subscribe-button:hover {
+    background-color: #3498db;
+}
+
+/* Style for the Take Subscription button */
+.take-subscription-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background-color: #5DADE2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    cursor: pointer;
+    z-index: 9999;
+}
+
+.take-subscription-btn:hover {
+    background-color: #3498db;
+}
+
+/* Media Query for Mobile Devices */
+@media (max-width: 768px) {
+    /* Adjust the title size for mobile screens */
+    h1 {
+        font-size: 1.8em;
+    }
+
+    /* Stack the video and chat content vertically */
+    .main-content {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* Adjust the size of the chatbox */
+    .chatbox {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        padding: 10px;
+    }
+
+    /* Adjust the button size on mobile */
+    .ask-button, .close-popup, .subscribe-button, .take-subscription-btn {
+        padding: 8px 16px;
+        font-size: 0.9em;
+    }
+
+    /* Stack subscription cards vertically on mobile */
+    .subscription-cards {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .card {
+        width: 80%; /* Adjust card width on mobile */
+        margin-bottom: 20px;
+    }
+
+    /* Adjust popup container size on mobile */
+    .popup-container {
+        width: 90%;
+        max-width: 500px;
+    }
+
+    /* Adjust the video size */
+    .video-container {
+        width: 100%;
+        height: auto;
+    }
+
+    .gif-image, .avatar-image {
+        width: 100%;
+        height: auto;
+    }
+
+    /* Position the Take Subscription and Close Button together */
+    .take-subscription-btn,
+    .close-popup {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        font-size: 1em;
+    }
+
+    /* Adjust layout for mobile to ensure both buttons align */
+    .take-subscription-btn {
+        margin-right: 110px; /* Ensure there's space for both buttons side by side */
+    }
+
+    .close-popup {
+        margin-right: 10px; /* Space between the buttons */
+    }
+
+    /* Center GIF image on mobile */
+    .gif-image {
+        margin-left: auto; /* Center horizontally */
+        margin-right: auto; /* Center horizontally */
+        display: block; /* Ensures it behaves as a block element */
+        width: 80%;  /* Optionally adjust the size of the gif on mobile */
+    }
+}
+
+
+
+/var/www/ourkidslearn.org/templates
+
+/var/www/ourkidslearn.org
